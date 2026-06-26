@@ -1,314 +1,452 @@
-# FarmConnect Kenya - Installation Guide
+# FarmConnect Kenya — Installation Guide
 
-## Quick Start Guide
-
-Follow these steps to get FarmConnect Kenya running on your local machine using XAMPP or Laragon.
+Complete setup instructions for **local development** (Laragon / XAMPP) and **live hosting** (InfinityFree).
 
 ---
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+| Requirement | Minimum |
+|-------------|---------|
+| PHP | 8.0+ (8.1+ recommended) |
+| MySQL / MariaDB | 5.7+ / 10.3+ |
+| Web server | Apache (mod_rewrite optional) |
+| PHP extensions | PDO MySQL, `fileinfo`, GD (recommended for image uploads) |
 
-1. **XAMPP** (https://www.apachefriends.org/) or **Laragon** (https://laragon.org/) installed
-2. **PHP 8.0 or higher**
-3. **MySQL 5.7 or higher**
-4. **A modern web browser** (Chrome, Firefox, Safari, Edge)
+**Local:** [Laragon](https://laragon.org/) or [XAMPP](https://www.apachefriends.org/)  
+**Live:** [InfinityFree](https://www.infinityfree.net/) or any PHP + MySQL host
 
 ---
 
-## Installation Steps
+## Which database file to use?
 
-### Step 1: Extract Project Files
+| File | Use? | Notes |
+|------|------|-------|
+| **`database/schema.sql`** | **Yes — use this** | Full current schema: Super Admin, orders, audit logs, customers |
+| `database.sql` (project root) | **No** | Legacy coursework schema (`fullname`, `username`) — outdated |
 
-1. Download the `farmconnect.zip` file
-2. Extract it to your local server directory:
+---
 
-   **For XAMPP (Windows):**
+## User roles
+
+| Role | How they log in | Access |
+|------|-----------------|--------|
+| **Customer** | Public registration | Browse, order, inquiries |
+| **Farmer** | Public registration | Products, orders, inquiries |
+| **Admin** | Created by Super Admin | Farmers, customers, products, orders |
+| **Super Admin** | Seeded admin account | Everything above + **Manage Admins** |
+
+Admin staff log in at the same URL as everyone else (`login.php`). The system detects the account type automatically.
+
+---
+
+## Part 1 — Local installation (Laragon / XAMPP)
+
+### Step 1: Place project files
+
+**Laragon (Windows):**
+```
+C:\laragon\www\farmconnect\
+```
+
+**XAMPP (Windows):**
+```
+C:\xampp\htdocs\farmconnect\
+```
+
+**XAMPP (Mac):**
+```
+/Applications/XAMPP/htdocs/farmconnect/
+```
+
+### Step 2: Start Apache and MySQL
+
+- **Laragon:** Click **Start All**
+- **XAMPP:** Start **Apache** and **MySQL**
+
+### Step 3: Configure environment
+
+1. Copy the example config:
    ```
-   C:\xampp\htdocs\farmconnect\
+   config/env.local.php.example  →  config/env.local.php
    ```
 
-   **For XAMPP (Mac):**
-   ```
-   /Applications/XAMPP/htdocs/farmconnect/
-   ```
+2. Edit `config/env.local.php` for local use:
 
-   **For Laragon (Windows):**
-   ```
-   C:\laragon\www\farmconnect\
-   ```
-
-### Step 2: Start Your Local Server
-
-**For XAMPP:**
-1. Open XAMPP Control Panel
-2. Click **Start** next to Apache
-3. Click **Start** next to MySQL
-
-**For Laragon:**
-1. Open Laragon
-2. Click the **Start** button
-
-### Step 3: Create the Database
-
-1. Open your browser and navigate to:
-   ```
-   http://localhost/phpmyadmin
-   ```
-
-2. You should see the phpMyAdmin interface
-
-3. **Method A: Import SQL File**
-   - Click the **Import** tab
-   - Click **Choose File**
-   - Select `database.sql` from the farmconnect folder
-   - Click **Go**
-
-4. **Method B: Manual SQL Entry**
-   - Click the **SQL** tab
-   - Copy the contents of `database.sql`
-   - Paste into the SQL query box
-   - Click **Go**
-
-### Step 4: Verify Database Creation
-
-1. In phpMyAdmin, you should see `farmconnect_db` in the left sidebar
-2. Click on it to expand and verify tables:
-   - `farmers`
-   - `products`
-   - `admins`
-
-### Step 5: Configure Database Connection (if needed)
-
-The database connection is pre-configured, but if you used different credentials:
-
-1. Open `config/db.php` in a text editor
-2. Update these values:
    ```php
-   $host = 'localhost';      // Your MySQL host
-   $db   = 'farmconnect_db';  // Your database name
-   $user = 'root';            // Your MySQL username
-   $pass = '';                // Your MySQL password
+   <?php
+   declare(strict_types=1);
+
+   return [
+       'APP_ENV'       => 'local',
+       'BASE_URL'      => 'http://localhost/farmconnect/',
+       'AUTO_BASE_URL' => true,   // auto-detect URL (ngrok, mobile testing)
+       'DB_HOST'       => 'localhost',
+       'DB_NAME'       => 'farmconnect_kenya',
+       'DB_USER'       => 'root',
+       'DB_PASS'       => '',
+   ];
    ```
-3. Save the file
 
-### Step 6: Access the Application
+   > `config/env.local.php` is gitignored — never commit it.
 
-Open your web browser and navigate to:
+   > `AUTO_BASE_URL` lets CSS and images load correctly when using ngrok or a phone on the same network.
+
+### Step 4: Create the database
+
+1. Open **phpMyAdmin:** `http://localhost/phpmyadmin`
+2. Click **Import**
+3. Choose **`database/schema.sql`**
+4. Click **Go**
+
+This creates database **`farmconnect_kenya`** with all tables:
+
+- `admins`, `farmers`, `customers`, `products`
+- `orders`, `inquiries`, `notifications`, `audit_logs`
+
+### Step 5: Seed the Super Admin account
+
+From the project folder in a terminal:
+
+```bash
+cd C:\laragon\www\farmconnect
+php tools/seed_admin.php
+```
+
+**Default Super Admin login:**
+
+| Field | Value |
+|-------|-------|
+| URL | `http://localhost/farmconnect/login.php` |
+| Email | `admin@farmconnect.co.ke` |
+| Password | `superadmin123` |
+
+Change this password after first login.
+
+### Step 6: Verify uploads folders
+
+Ensure these folders exist and are writable:
+
+```
+uploads/
+uploads/profiles/
+uploads/products/
+```
+
+On Windows (Laragon/XAMPP) the default permissions are usually fine. On Linux/Mac:
+
+```bash
+chmod -R 755 uploads/
+```
+
+### Step 7: Open the application
 
 ```
 http://localhost/farmconnect/
 ```
 
-You should see the FarmConnect Kenya homepage!
-
-### Step 7: Enable customer orders (Phase 6 — if not using full `database/schema.sql`)
-
-If order placement shows *"Orders table is missing"*, create the `orders` table:
-
-**Option A — PHP (recommended, uses `config/db.php`):**
-
-```bash
-cd C:\laragon\www\farmconnect
-php tools/migrate_phase6_orders.php
-```
-
-**Option B — phpMyAdmin:**
-
-1. Select database `farmconnect_kenya`
-2. Import `database/migrations/phase6_orders.sql`
-
-The `orders` table links to `customers`, `farmers`, and `products` with foreign keys. New orders default to status `pending` and payment `cash_on_delivery`.
-
-**Phase 6B — order workflow (after Part 1):**
-
-```bash
-php tools/migrate_phase6b_orders.php
-```
-
-This updates order statuses to Pending / Accepted / Rejected / Delivered. Stock is deducted when the farmer accepts an order.
+You should see the FarmConnect Kenya homepage. Log in as Super Admin to access the full admin dashboard.
 
 ---
 
-## First Time Setup
+## Part 2 — Upgrading an old database
 
-### Create Your First Farmer Account
+If you previously used the legacy `farmconnect_db` database (old `fullname` / `username` columns), run:
 
-1. Click **Register** in the navigation menu
-2. Fill in the registration form:
-   - Full Name
-   - Phone Number
-   - Email Address
-   - Password (at least 6 characters)
-   - Farming Location
-3. Click **Register**
-4. You'll be redirected to the login page
-5. Log in with your new credentials
+```bash
+php tools/migrate_legacy_db.php
+```
 
-### Access the Admin Panel
+This script:
 
-1. Go to `http://localhost/farmconnect/login.php`
-2. Enter these credentials:
-   - **Email/Username:** `admin`
-   - **Password:** `admin123`
-3. You'll be taken to the admin dashboard
+- Renames legacy columns to match the current schema
+- Adds Super Admin `role` and `audit_logs`
+- Normalizes table collations
+- Seeds the Super Admin account
+
+Then set `DB_NAME` in `config/env.local.php` to match your database name.
+
+**Collation fix only** (if you see `Illegal mix of collations` errors):
+
+```bash
+php tools/fix_collations.php
+```
+
+**Super Admin migration only** (database already has correct columns):
+
+Import `database/migrations/add_super_admin_role.sql` in phpMyAdmin.
 
 ---
 
-## Folder Permissions
+## Part 3 — Live hosting on InfinityFree
 
-Ensure the `uploads/` folder has write permissions:
+### Before you upload
 
-**For Windows (XAMPP/Laragon):**
-- Right-click `uploads` folder
-- Select **Properties**
-- Go to **Security** tab
-- Click **Edit**
-- Select your user and check **Full Control**
-- Click **Apply**
+InfinityFree is suitable for **demos, coursework, and low-traffic sites**. Limits include ~50 MB per database and ~30,000 daily HTTP requests.
 
-**For Mac/Linux:**
-```bash
-chmod 755 /path/to/farmconnect/uploads/
+### Files to upload
+
+Upload **production files only** to `htdocs` (via FTP or file manager):
+
 ```
+admin/  assets/  config/  customer/  farmer/  includes/  uploads/
+index.php  login.php  logout.php  products.php  product_details.php
+place_order.php  contact_inquiry.php  register.php  register_choice.php
+register_customer.php  register_farmer.php
+```
+
+**Do not upload:** `WEEK 1/` … `WEEK 9/` folders, `.git/`, or local-only tools (optional).
+
+### Step 1: Create MySQL database in VistaPanel
+
+1. Log in to [InfinityFree](https://www.infinityfree.net/) → **VistaPanel**
+2. Create a MySQL database
+3. Note these values:
+   - **MySQL Hostname** (e.g. `sql305.infinityfree.com`)
+   - **Database name** (e.g. `if0_12345678_farmconnect`)
+   - **Username** and **Password**
+
+### Step 2: Create `config/env.local.php` on the server
+
+```php
+<?php
+declare(strict_types=1);
+
+return [
+    'APP_ENV'       => 'production',
+    'BASE_URL'      => 'https://yoursite.infinityfreeapp.com/',
+    'AUTO_BASE_URL' => true,
+    'DB_HOST'       => 'sql305.infinityfree.com',   // from VistaPanel
+    'DB_NAME'       => 'if0_12345678_farmconnect',   // from VistaPanel
+    'DB_USER'       => 'if0_12345678',               // from VistaPanel
+    'DB_PASS'       => 'your_database_password',
+];
+```
+
+Replace values with your actual InfinityFree credentials. Use `https://` if SSL is enabled.
+
+### Step 3: Import the database
+
+1. Open **phpMyAdmin** from VistaPanel
+2. Select **your** database (do not create a new one — InfinityFree assigns the name)
+3. Go to **Import**
+4. Open `database/schema.sql` in a text editor and **remove** these lines before importing:
+   ```sql
+   CREATE DATABASE IF NOT EXISTS farmconnect_kenya ...
+   USE farmconnect_kenya;
+   ```
+5. Import the remaining SQL
+
+### Step 4: Seed the Super Admin
+
+InfinityFree free plans have **no SSH**, so run the seeder locally pointed at your live DB, **or** use phpMyAdmin:
+
+**Option A — run locally** (if remote MySQL is allowed; InfinityFree blocks external DB access, so this usually does not work):
+
+Use Option B instead.
+
+**Option B — phpMyAdmin SQL tab:**
+
+After uploading files, visit this URL **once** in your browser (create a temporary file if needed):
+
+```
+https://yoursite.infinityfreeapp.com/tools/seed_admin.php
+```
+
+Then **delete** `tools/seed_admin.php` from the server immediately after use.
+
+**Option C — manual SQL in phpMyAdmin:**
+
+Generate a password hash locally:
+
+```bash
+php -r "echo password_hash('superadmin123', PASSWORD_DEFAULT);"
+```
+
+Then run in phpMyAdmin:
+
+```sql
+INSERT INTO admins (full_name, email, password_hash, role, status)
+VALUES (
+    'System Administrator',
+    'admin@farmconnect.co.ke',
+    'PASTE_HASH_HERE',
+    'super_admin',
+    'active'
+);
+```
+
+### Step 5: Enable SSL
+
+In VistaPanel → **SSL Certificates** → enable free SSL for your domain.
+
+### Step 6: Set uploads permissions
+
+Create and make writable (via FTP / file manager):
+
+```
+uploads/profiles/
+uploads/products/
+```
+
+### Step 7: Smoke test
+
+1. Homepage loads with styling (green navbar, marketplace layout)
+2. Login as Super Admin → dashboard shows **Super Admin** badge
+3. Sidebar includes **Manage Admins**
+4. Register a farmer → add a product → appears on marketplace
+5. Register a customer → place an order
+
+---
+
+## First-time usage
+
+### Register a farmer
+
+1. Go to **Get Started** → **Register as Farmer**
+2. Complete the form and log in
+3. Add products from the farmer dashboard
+
+### Register a customer
+
+1. Go to **Get Started** → **Register as Customer**
+2. Log in and browse the marketplace
+3. Place an order on a product page
+
+### Super Admin tasks
+
+1. Log in at `/login.php`
+2. Open **Manage Admins** → create Admin accounts
+3. Use **Farmers** / **Customers** to suspend, activate, or delete accounts
+4. View **Orders** for platform-wide order monitoring
 
 ---
 
 ## Troubleshooting
 
-### Issue: "Connection refused" error
+### Unknown database `farmconnect_db`
 
-**Solution:**
-- Verify MySQL is running in XAMPP/Laragon Control Panel
-- Check that port 3306 is not blocked
-- Restart your local server
+**Cause:** `config/env.local.php` points to the wrong database name.
 
-### Issue: "Database does not exist" error
+**Fix:** Set `DB_NAME` to `farmconnect_kenya` (or your InfinityFree database name) and import `database/schema.sql`.
 
-**Solution:**
-- Verify you imported `database.sql` correctly
-- Check phpMyAdmin to confirm `farmconnect_db` exists
-- Try importing again using Method B (Manual SQL Entry)
+### Column not found (`full_name`, `role`, etc.)
 
-### Issue: "Access denied for user 'root'" error
+**Cause:** Old legacy database schema.
 
-**Solution:**
-- Verify MySQL username and password in `config/db.php`
-- Check your XAMPP/Laragon MySQL credentials
-- Reset MySQL password if forgotten
+**Fix:** Import `database/schema.sql` on a fresh database, or run `php tools/migrate_legacy_db.php`.
 
-### Issue: Images not uploading
+### CSS / images broken on mobile or ngrok
 
-**Solution:**
-- Verify `uploads/` folder exists
-- Check folder permissions (should be 755 or writable)
-- Verify file size limits in `php.ini`
-- Ensure only JPG/PNG files are uploaded
+**Cause:** `BASE_URL` pointed to `localhost`.
 
-### Issue: Session/Login problems
+**Fix:** Set `'AUTO_BASE_URL' => true` in `config/env.local.php`.
 
-**Solution:**
-- Clear browser cookies (Ctrl+Shift+Delete)
-- Clear browser cache
-- Try a different browser
-- Verify PHP sessions are enabled
+### Illegal mix of collations (UNION error)
 
-### Issue: Blank page or 500 error
+**Fix:**
 
-**Solution:**
-- Check PHP error logs in XAMPP/Laragon
-- Verify all PHP files are properly saved
-- Check database connection in `config/db.php`
-- Ensure PHP 8.0+ is installed
+```bash
+php tools/fix_collations.php
+```
 
----
+### Constant already defined warnings
 
-## Testing the Application
+**Cause:** Usually resolved in current code. Clear browser cache and ensure you are on the latest version.
 
-### Test Farmer Workflow
+### InfinityFree 500 error
 
-1. **Register:** Create a new farmer account
-2. **Login:** Log in with your credentials
-3. **Add Product:** Add a test product
-4. **Edit Product:** Modify the product details
-5. **View:** Check if product appears on public page
-6. **Delete:** Remove the product
+- Check PHP version is **8.0+** in VistaPanel
+- Verify `config/env.local.php` exists on the server with correct DB credentials
+- Check error logs in VistaPanel → **Error Log**
+- Ensure no single PHP file exceeds InfinityFree size limits
 
-### Test Admin Workflow
+### Images not uploading
 
-1. **Login as Admin:** Use admin credentials
-2. **View Farmers:** Check farmers list
-3. **View Products:** Check products list
-4. **Delete Product:** Remove a product from admin panel
-5. **View Statistics:** Check dashboard statistics
+- Confirm `uploads/profiles/` and `uploads/products/` exist and are writable
+- Max upload size is **2 MB** per image (configured in `config/app.php`)
+- Only JPG, PNG, and WebP are allowed
 
-### Test Public Features
+### Login fails for Super Admin
 
-1. **Homepage:** Browse featured products
-2. **Products Page:** View all products
-3. **Search:** Search for specific products
-4. **Filter:** Filter by location
-5. **Responsive:** Test on mobile/tablet view
+```bash
+php tools/seed_admin.php
+```
+
+Or run `php tools/fix_admin_account.php` if duplicate admin rows exist.
 
 ---
 
-## Performance Tips
+## Testing checklist
 
-1. **Optimize Images:** Compress product images before uploading
-2. **Database Maintenance:** Regularly clean up old products
-3. **Clear Cache:** Clear browser cache periodically
-4. **Monitor Logs:** Check error logs for issues
+### Public
 
----
+- [ ] Homepage loads with correct styling
+- [ ] Marketplace search and pagination work
+- [ ] Product detail page displays correctly
 
-## Security Checklist
+### Farmer
 
-Before going live/commercial:
+- [ ] Register and log in
+- [ ] Add, edit, and delete a product
+- [ ] Receive and respond to an order
 
-- [ ] Change default admin password
-- [ ] Enable HTTPS/SSL
-- [ ] Set up regular database backups
-- [ ] Implement rate limiting
-- [ ] Add CSRF tokens to forms
-- [ ] Validate all file uploads
-- [ ] Use environment variables for credentials
-- [ ] Implement user account verification
-- [ ] Add password reset functionality
-- [ ] Set up error logging
+### Customer
 
----
+- [ ] Register and log in
+- [ ] Place an order
+- [ ] View order status updates
 
-## Next Steps
+### Admin (staff)
 
-After successful installation:
+- [ ] Log in as Admin (not Super Admin)
+- [ ] Manage farmers, customers, products
+- [ ] **Manage Admins** menu is hidden
 
-1. **Customize:** Modify colors, text, and branding
-2. **Add Features:** Implement payment integration
-3. **Scale:** Deploy to a production server
-4. **Monitor:** Set up monitoring and analytics
-5. **Maintain:** Regular updates and backups
+### Super Admin
+
+- [ ] Log in as Super Admin
+- [ ] Dashboard shows extended stats
+- [ ] Create, suspend, promote, and demote admin accounts
+- [ ] Audit actions work without errors
 
 ---
 
-## Getting Help
+## Security checklist (before going live)
 
-If you encounter issues:
-
-1. Check the **Troubleshooting** section above
-2. Review the main **README.md** file
-3. Check PHP error logs
-4. Verify database connection
-5. Test with a fresh browser window
-
----
-
-## Support
-
-For additional help:
-- Email: info@farmconnect.co.ke
-- Check the README.md for more information
+- [ ] Change default Super Admin password (`superadmin123`)
+- [ ] Enable HTTPS / SSL
+- [ ] Confirm `config/env.local.php` is **not** publicly accessible
+- [ ] Delete one-time setup scripts (`tools/seed_admin.php`) from the server after use
+- [ ] Set up regular database backups via VistaPanel
+- [ ] Keep `uploads/.htaccess` in place (blocks PHP execution in uploads)
 
 ---
 
-**Happy farming! 🌾**
+## Useful commands (local only)
+
+| Command | Purpose |
+|---------|---------|
+| `php tools/seed_admin.php` | Create / reset Super Admin account |
+| `php tools/migrate_legacy_db.php` | Upgrade old `farmconnect_db` schema |
+| `php tools/fix_collations.php` | Fix mixed collation errors |
+| `php tools/fix_admin_account.php` | Remove duplicate admin rows |
+| `php tools/migrate_phase6_orders.php` | Add orders table (partial upgrade only) |
+
+For a **fresh install**, import `database/schema.sql` only — migrations are not needed.
+
+---
+
+## Related files
+
+| File | Purpose |
+|------|---------|
+| `config/env.local.php.example` | Environment template |
+| `database/schema.sql` | Full database schema |
+| `database/migrations/add_super_admin_role.sql` | Super Admin upgrade for existing DBs |
+| `DEPLOYMENT.md` | Short deployment checklist |
+| `README.md` | Project overview |
+
+---
+
+**Happy farming!**
