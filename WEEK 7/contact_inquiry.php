@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
 $productId = (int) ($_GET['product_id'] ?? $_POST['product_id'] ?? 0);
 $product = marketplace_product_by_id($productId);
