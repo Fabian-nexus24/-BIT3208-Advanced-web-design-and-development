@@ -112,10 +112,16 @@ function admin_marketplace_activity(int $limit = 12): array
     }
 
     $users = $pdo->query(
-        "SELECT 'registration' AS kind, full_name AS actor, email AS subject, created_at, 'farmer' AS user_type
+        "SELECT 'registration' AS kind,
+                full_name COLLATE utf8mb4_unicode_ci AS actor,
+                email COLLATE utf8mb4_unicode_ci AS subject,
+                created_at, 'farmer' AS user_type
          FROM farmers
          UNION ALL
-         SELECT 'registration', full_name, email, created_at, 'customer'
+         SELECT 'registration',
+                full_name COLLATE utf8mb4_unicode_ci,
+                email COLLATE utf8mb4_unicode_ci,
+                created_at, 'customer'
          FROM customers
          ORDER BY created_at DESC
          LIMIT " . (int) $limit

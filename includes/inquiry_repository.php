@@ -5,9 +5,6 @@ declare(strict_types=1);
  * Customer–farmer inquiry data access.
  */
 
-define('INQUIRY_MIN_LENGTH', 10);
-define('INQUIRY_MAX_LENGTH', 2000);
-
 function safe_redirect_path(string $path): ?string
 {
     $path = ltrim(trim($path), '/');
