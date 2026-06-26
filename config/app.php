@@ -5,11 +5,7 @@ declare(strict_types=1);
  * Application configuration constants.
  */
 
-if (is_file(__DIR__ . '/../../includes/env.php')) {
-    require_once __DIR__ . '/../../includes/env.php';
-} else {
-    require_once __DIR__ . '/../includes/env.php';
-}
+require_once __DIR__ . '/../includes/env.php';
 
 define('APP_NAME', 'FarmConnect Kenya');
 define('APP_ENV', env_string('APP_ENV', 'local'));

@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Database connection (PDO) and session bootstrap.
  */
 
-require_once __DIR__ . '/../../includes/env.php';
+require_once __DIR__ . '/../includes/env.php';
 
 $env = app_env();
 
