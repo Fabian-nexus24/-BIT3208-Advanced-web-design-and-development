@@ -9,8 +9,8 @@
  */
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/config/app.php';
-require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/WEEK 1/config/app.php';
+require_once dirname(__DIR__) . '/WEEK 1/config/db.php';
 
 $sqlFile = dirname(__DIR__) . '/database/migrations/phase6_orders.sql';
 
