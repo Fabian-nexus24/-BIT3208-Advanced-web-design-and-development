@@ -11,6 +11,15 @@ function require_admin(): void
     require_role(ROLE_ADMIN);
 }
 
+function require_super_admin(): void
+{
+    require_admin();
+    if (!is_super_admin()) {
+        flash_set('danger', 'Super Admin access only.');
+        redirect('admin/dashboard.php');
+    }
+}
+
 function require_farmer(): void
 {
     require_role(ROLE_FARMER);

@@ -92,10 +92,16 @@ function admin_dashboard_stats(): array
     $products = (int) $pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
 
     $recent = $pdo->query(
-        "SELECT 'farmer' AS user_type, id, full_name AS name, email, created_at
+        "SELECT 'farmer' AS user_type, id,
+                full_name COLLATE utf8mb4_unicode_ci AS name,
+                email COLLATE utf8mb4_unicode_ci AS email,
+                created_at
          FROM farmers
          UNION ALL
-         SELECT 'customer', id, full_name, email, created_at
+         SELECT 'customer', id,
+                full_name COLLATE utf8mb4_unicode_ci,
+                email COLLATE utf8mb4_unicode_ci,
+                created_at
          FROM customers
          ORDER BY created_at DESC
          LIMIT 8"
@@ -146,3 +152,35 @@ function change_user_password(string $role, int $userId, string $current, string
 
     return ['ok' => true];
 }
+
+function super_admin_dashboard_stats(): array
+{
+    global $pdo;
+
+    $activeFarmers = (int) $pdo->query("SELECT COUNT(*) FROM farmers WHERE status = 'active'")->fetchColumn();
+    $suspendedFarmers = (int) $pdo->query("SELECT COUNT(*) FROM farmers WHERE status = 'suspended'")->fetchColumn();
+
+    $activeCustomers = (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE status = 'active'")->fetchColumn();
+    $suspendedCustomers = (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE status = 'suspended'")->fetchColumn();
+
+    $activeManagers = (int) $pdo->query("SELECT COUNT(*) FROM admins WHERE role = 'manager' AND status = 'active'")->fetchColumn();
+    $suspendedManagers = (int) $pdo->query("SELECT COUNT(*) FROM admins WHERE role = 'manager' AND status = 'suspended'")->fetchColumn();
+    
+    $superAdmins = (int) $pdo->query("SELECT COUNT(*) FROM admins WHERE role = 'super_admin'")->fetchColumn();
+
+    $totalProducts = (int) $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+    $totalOrders = (int) $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+
+    return [
+        'active_farmers'      => $activeFarmers,
+        'suspended_farmers'   => $suspendedFarmers,
+        'active_customers'    => $activeCustomers,
+        'suspended_customers' => $suspendedCustomers,
+        'active_managers'     => $activeManagers,
+        'suspended_managers'  => $suspendedManagers,
+        'super_admins'        => $superAdmins,
+        'total_products'      => $totalProducts,
+        'total_orders'        => $totalOrders,
+    ];
+}
+

@@ -12,6 +12,11 @@ function dashboard_shell_start(string $role, string $activeNav, string $pageTitl
     $menu = match ($role) {
         ROLE_ADMIN => [
             ['id' => 'dashboard', 'label' => 'Dashboard', 'url' => 'admin/dashboard.php', 'icon' => 'bi-speedometer2'],
+            ['id' => 'farmers', 'label' => 'Farmers', 'url' => 'admin/farmers.php', 'icon' => 'bi-people'],
+            ['id' => 'customers', 'label' => 'Customers', 'url' => 'admin/customers.php', 'icon' => 'bi-person-lines-fill'],
+            ['id' => 'products', 'label' => 'Products', 'url' => 'admin/products.php', 'icon' => 'bi-basket'],
+            ['id' => 'orders', 'label' => 'Orders', 'url' => 'admin/orders.php', 'icon' => 'bi-cart-check'],
+            ['id' => 'admins', 'label' => 'Manage Admins', 'url' => 'admin/admins.php', 'icon' => 'bi-shield-lock', 'super_admin_only' => true],
         ],
         ROLE_FARMER => [
             ['id' => 'dashboard', 'label' => 'Dashboard', 'url' => 'farmer/dashboard.php', 'icon' => 'bi-speedometer2'],
@@ -33,7 +38,7 @@ function dashboard_shell_start(string $role, string $activeNav, string $pageTitl
     };
 
     $roleBadge = match ($role) {
-        ROLE_ADMIN    => 'Admin',
+        ROLE_ADMIN    => is_super_admin() ? 'Super Admin' : 'Admin',
         ROLE_FARMER   => 'Farmer',
         ROLE_CUSTOMER => 'Customer',
         default       => 'User',
@@ -43,6 +48,7 @@ function dashboard_shell_start(string $role, string $activeNav, string $pageTitl
     ?>
     <ul class="nav nav-pills flex-column gap-1">
         <?php foreach ($menu as $item): ?>
+            <?php if (($item['super_admin_only'] ?? false) && !is_super_admin()) { continue; } ?>
             <li class="nav-item">
                 <a class="nav-link text-white <?= $activeNav === $item['id'] ? 'active' : '' ?>"
                    href="<?= e(url($item['url'])) ?>">

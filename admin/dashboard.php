@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/../includes/bootstrap.php';
+require_once dirname(__DIR__) . '/includes/bootstrap.php';
 
 require_admin();
 deny_cross_role_access();
@@ -21,7 +21,7 @@ if (is_super_admin()) {
             <div class="col">
                 <p class="text-warning-emphasis small mb-1 fw-bold"><i class="bi bi-shield-fill-check"></i> Super Administrator privileges active</p>
                 <h2 class="h4 fw-bold mb-1 text-dark">Welcome back, <?= e($auth['name'] ?? 'Super Admin') ?></h2>
-                <p class="text-muted mb-0 small">Access full user access controls, manager hierarchy operations, and audit logs.</p>
+                <p class="text-muted mb-0 small">Access full user access controls, admin hierarchy operations, and audit logs.</p>
             </div>
             <div class="col-auto d-none d-sm-block">
                 <i class="bi bi-shield-lock display-4 text-warning opacity-75"></i>
@@ -39,8 +39,8 @@ if (is_super_admin()) {
         <?= stat_card('Suspended Customers', (string) $saStats['suspended_customers'], 'bi-person-dash', 'danger') ?>
     </div>
     <div class="row g-3 mb-4">
-        <?= stat_card('Active Managers', (string) $saStats['active_managers'], 'bi-shield-check', 'info') ?>
-        <?= stat_card('Suspended Managers', (string) $saStats['suspended_managers'], 'bi-shield-slash', 'danger') ?>
+        <?= stat_card('Active Admins', (string) $saStats['active_managers'], 'bi-shield-check', 'info') ?>
+        <?= stat_card('Suspended Admins', (string) $saStats['suspended_managers'], 'bi-shield-slash', 'danger') ?>
         <?= stat_card('Total Products', (string) $saStats['total_products'], 'bi-basket', 'warning') ?>
         <?= stat_card('Total Orders', (string) $saStats['total_orders'], 'bi-cart-check', 'secondary') ?>
     </div>

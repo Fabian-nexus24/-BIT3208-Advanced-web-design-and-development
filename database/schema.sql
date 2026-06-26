@@ -16,10 +16,12 @@ CREATE TABLE IF NOT EXISTS admins (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(20) NULL,
+    role ENUM('super_admin', 'manager') NOT NULL DEFAULT 'manager',
     status ENUM('active', 'suspended') NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_admins_status (status)
+    INDEX idx_admins_status (status),
+    INDEX idx_admins_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
@@ -159,7 +161,24 @@ CREATE TABLE IF NOT EXISTS notifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- audit_logs
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    actor_admin_id INT UNSIGNED     NOT NULL,
+    action         VARCHAR(100)     NOT NULL,
+    target_type    VARCHAR(50)      NOT NULL,
+    target_id      INT UNSIGNED     NOT NULL,
+    metadata       JSON             NULL,
+    created_at     TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_audit_actor   (actor_admin_id),
+    INDEX idx_audit_target  (target_type, target_id),
+    INDEX idx_audit_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Default admin: run after import:
 --   php tools/seed_admin.php
--- Credentials: admin@farmconnect.co.ke / Admin@123
+-- Credentials: admin@farmconnect.co.ke / superadmin123
 -- ---------------------------------------------------------------------------
+

@@ -15,6 +15,10 @@ function login_user(string $role, array $row): void
         'name'  => (string) $row['full_name'],
         'email' => (string) $row['email'],
     ];
+
+    if ($role === ROLE_ADMIN) {
+        $_SESSION['auth']['admin_role'] = (string) ($row['role'] ?? 'manager');
+    }
 }
 
 function logout_user(): void
@@ -50,6 +54,21 @@ function is_logged_in(): bool
 function current_role(): ?string
 {
     return $_SESSION['auth']['role'] ?? null;
+}
+
+function current_admin_role(): ?string
+{
+    return $_SESSION['auth']['admin_role'] ?? null;
+}
+
+function is_super_admin(): bool
+{
+    return current_role() === ROLE_ADMIN && current_admin_role() === ROLE_SUPER_ADMIN;
+}
+
+function is_manager(): bool
+{
+    return current_role() === ROLE_ADMIN && current_admin_role() === ROLE_MANAGER;
 }
 
 function dashboard_path_for_role(string $role): string
@@ -112,8 +131,12 @@ function authenticate_user(string $email, string $password): array
     ];
 
     foreach ($tables as $role => $table) {
+        $cols = 'id, full_name, email, password_hash, status';
+        if ($role === ROLE_ADMIN) {
+            $cols .= ', role';
+        }
         $stmt = $pdo->prepare(
-            "SELECT id, full_name, email, password_hash, status
+            "SELECT {$cols}
              FROM {$table}
              WHERE email = ? AND status = 'active'
              LIMIT 1"
